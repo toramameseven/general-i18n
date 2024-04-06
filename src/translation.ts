@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import path from "node:path";
 
 import {
   type Disposable,
@@ -10,11 +11,7 @@ import {
   workspace,
 } from 'vscode'
 
-import type { FileSet } from '../extension'
-
-
-import { getPageRawFrontmatter, type Locales } from './content'
-import type { Locale } from './starlightAst';
+import type { FileSet } from './extension'
 
 
 export async function pickTranslationGeneral(locales: Locales
@@ -122,3 +119,35 @@ interface SeparatorQuickPickItem extends QuickPickItem {
 
 type TranslationPickerItem = LocaleQuickPickItem | SeparatorQuickPickItem
 type TranslationPicker = QuickPick<TranslationPickerItem>
+
+
+
+export function mdPathInfo(fsPath: string, targetLang: string) {
+    const contentFolder = "content";
+    const pathSplitter = "\\";
+    const topFolders = fsPath.split(pathSplitter).filter(x => x === contentFolder).length;
+    if (topFolders > 1){
+        throw new Error(`More than two ${contentFolder} folders exist.`);
+    }
+    if (topFolders < 1){
+        throw new Error(`No ${contentFolder} exists.`)
+    }
+
+    const beforeAfterTopFolder = fsPath.split(contentFolder + pathSplitter);
+    const head = beforeAfterTopFolder[0] ?? "";
+    const lang = beforeAfterTopFolder[1]?.split(pathSplitter)[0];
+    const tail = beforeAfterTopFolder[1]?.slice(lang?.length) ?? "";
+    // return {head, contentFolder, lang, tail};
+    return path.join(head, contentFolder, targetLang, tail)
+}
+
+type Locales = Record<
+  string,
+  Locale
+>
+
+
+interface Locale {
+  label: string
+  lang?: string
+}
