@@ -6,55 +6,46 @@ See [LICENSE](https://github.com/HiDeoo/starlight-i18n/blob/main/LICENSE) for mo
 import { commands, type ExtensionContext, window, workspace, Uri } from 'vscode'
 
 
-import { mdPathInfo, pickTranslationGeneral, prepareTranslationX } from './translation'
+import { getTranslationJs, mdPathInfo as makeOtherLangFile, getTranslationInfo, getLang } from './sample'
+import { pickTranslationGeneral, prepareTranslationX } from './translation'
 import { isWorkspaceWithSingleFolder, outputLog } from './vsc'
 
 
 export function activate(context: ExtensionContext): void {
   context.subscriptions.push(
-    commands.registerCommand('general-i18n.start', openOtherTranslation),
+    commands.registerCommand('general-i18n.start', openOtherLangFile),
   )
   outputLog('general i18n ready');
 }
 
-async function openOtherTranslation(uriFile: Uri) {
+async function openOtherLangFile(uriFile: Uri) {
   try {
     if (!isWorkspaceWithSingleFolder(workspace.workspaceFolders)) {
-      throw new Error('Starlight i18n only supports single folder workspaces.')
+      // throw new Error('General i18n only supports single folder workspaces.')
+    }
+    const translationJs = getTranslationJs(uriFile.fsPath);
+    if (!translationJs){
+      throw new Error('No .translation.js file.')
+    }
+    
+    
+    const translationInfo = getTranslationInfo(translationJs);
+    const lang = getLang(uriFile.fsPath, translationInfo);
+    if (!lang){
+      throw new Error('No language')
     }
 
-
-
-    // if (!pathInfo.head) {
-    //   throw new Error('Failed to find a content folder.')
-    // }
-
-    const locales = {
-      en:{
-        lang: "en",
-        label: "english"
-      },
-      ja:{
-        lang: "ja",
-        label: "日本語"
-      }
-    }
+    delete translationInfo.locales[lang];
+    const locales = translationInfo.locales;
 
     const localePickItem = await pickTranslationGeneral(locales)
-    const pathInfo = mdPathInfo(uriFile.fsPath, localePickItem?.locale.lang ?? "");
+    const pathInfo = makeOtherLangFile(uriFile.fsPath, localePickItem?.locale.lang ?? "", translationInfo.contentFolder);
 
-    const fileSet:FileSet = {
+    const fileSet: FileSet = {
       source: uriFile,
-      translation:Uri.file(pathInfo),
+      translation: Uri.file(pathInfo),
       isContent: true
     }
-
-
-    outputLog(`========================>`)
-    localePickItem
-    outputLog(`label: ${localePickItem?.label}`)
-    // outputLog(`fileSet: ${fileSet.source.toString()}`)
-    // outputLog(`fileSet: ${fileSet.translation.toString()}`)
 
     await prepareTranslationX(fileSet)
   } catch (error) {

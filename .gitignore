@@ -32,3 +32,4 @@ starlight-i18n-**.vsix
 test-results
 yarn-debug.log*
 yarn-error.log*
+*.vsix

@@ -11,3 +11,5 @@ starlight-i18n-**.vsix
 tests
 tsconfig.json
 tsconfig.tsbuildinfo
+.vscode-test.js
+tsconfig-test.json
